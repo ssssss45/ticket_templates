@@ -4,10 +4,10 @@ const pdf = require('html-pdf');
 
 const COLUMNS = 3;
 
-const ORGNANE = "Организация";
+const ORGNAM = "Организация";
 
 const CODEX = {
-    "111": "ID",
+    "111": "IDENTIFIER",
     "333": "NAME",
     "444": "SNAME",
     "222": "SURNAME",
@@ -38,6 +38,7 @@ fs.readFile('template.html', "utf8", (err, data)=>{
         const readerData = (data.split("\n"));
         const readers = [];
         let reader = {};
+        // разбираем список читателей
         for (let i = 0; i < readerData.length; i++){
             const split = readerData[i].split(":");
             const type =  split[0];
@@ -50,12 +51,18 @@ fs.readFile('template.html', "utf8", (err, data)=>{
                 reader = {};
             }
         }
-        console.log(readers)
         let result = '<link rel="stylesheet" type="text/css" href="./styles.css"><div class="ticket-container">';
         let currentCol = 0;
         for (let i = 0; i < readers.length; i++){
             // клонирование шаблона, подстановка того что надо
-            result += template;
+            let currentTemplate = template;
+            const keys = Object.keys(readers[i]);
+            keys.forEach(key=>{
+                // console.log(currentTemplate.indexOf(key+"}}"));
+                currentTemplate = currentTemplate.replace("{{"+key+"}}", readers[i][key]);
+            });
+            currentTemplate = currentTemplate.replace("{{ORGNAM}}", ORGNAM);
+            result += currentTemplate;
             currentCol ++;
             if (currentCol === COLUMNS){
                 currentCol = 0;
