@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "trickets": "node tickets.js"
+    "tricketsA3": "node tickets.js A3",
+    "tricketsA4": "node tickets.js A4"
   },
   "repository": {
     "type": "git",

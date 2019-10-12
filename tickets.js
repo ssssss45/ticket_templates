@@ -15,10 +15,16 @@ const CODEX = {
     "666": "DATE"
 };
 
+const STYLECODEX = {
+    "NAME": {key:"NAMEHEIGHT", default:17, limit: 15},
+    "SNAME": {key:"SNAMEHEIGHT", default:17, limit: 15},
+    "SURNAME" : {key:"SURNAMEHEIGHT", default:25, limit: 10}
+};
+
 const BREAKER = "****";
 
 const base = path.resolve();
-console.log();
+
 const PDF_OPTIONS = {
     // если билеты режутся на переходах между страницами, то нужно покрутить поля
     "border": {
@@ -28,7 +34,8 @@ const PDF_OPTIONS = {
         "left": "2cm"
     },
     "base": "file:///" + base.replace("\\", "/") + "/",
-    "format": "A3"
+    "format": process.argv[2] === "A3" ? "A3" : "A4",
+    "orientation": process.argv[2] === "A3" ? "portrait" : "landscape"
 };
 
 // читаем шаблон
@@ -57,10 +64,15 @@ fs.readFile('template.html', "utf8", (err, data)=>{
             // клонирование шаблона, подстановка того что надо
             let currentTemplate = template;
             const keys = Object.keys(readers[i]);
+            // подстановка данных
             keys.forEach(key=>{
-                // console.log(currentTemplate.indexOf(key+"}}"));
                 currentTemplate = currentTemplate.replace("{{"+key+"}}", readers[i][key]);
+                // стили
+                if (STYLECODEX[key]){
+                    currentTemplate = currentTemplate.replace("{{"+STYLECODEX[key].key+"}}", readers[i][key].length >  STYLECODEX[key].limit ? STYLECODEX[key].default - (readers[i][key].length - STYLECODEX[key].limit) * 1.3 : STYLECODEX[key].default);
+                }
             });
+            // подстановка названия организации
             currentTemplate = currentTemplate.replace("{{ORGNAM}}", ORGNAM);
             result += currentTemplate;
             currentCol ++;
