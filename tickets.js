@@ -1,8 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const pdf = require('html-pdf');
-// const barcode = require('barcode');
-// const gm = require('gm').subClass({ imageMagick: true });
 const bwipjs = require('bwip-js');
 
 
@@ -42,6 +40,11 @@ const PDF_OPTIONS = {
     "orientation": process.argv[2] === "A3" ? "portrait" : "landscape"
 };
 
+let barcodesGenerated = 0;
+let barcodesToGenerate = 0;
+let htmlReady = false;
+let html;
+
 // читаем шаблон
 fs.readFile('template.html', "utf8", (err, data)=>{
     const template = data;
@@ -74,7 +77,8 @@ fs.readFile('template.html', "utf8", (err, data)=>{
             //     width: 206,
             //     height: 80,
             // });
-            const outfile = path.join(base, 'barcodes', readers[i].IDENTIFIER+".png");
+            barcodesToGenerate ++;
+            const outfile = path.join('./', 'barcodes', readers[i].IDENTIFIER+".png");
             currentTemplate = currentTemplate.replace("{{BARCODE}}", outfile);
             bwipjs.toBuffer({
                 bcid:        'code39',       // Barcode type
@@ -86,26 +90,13 @@ fs.readFile('template.html', "utf8", (err, data)=>{
             }, function (err, png) {
                 if (err) {
                     console.log(err)
-                    // Decide how to handle the error
-                    // `err` may be a string or Error object
                 } else {
-                    fs.writeFile(outfile, png, 'base64', function(err) {
-                        console.log(err);
+                    fs.writeFile(outfile, png, 'base64', function() {
+                        barcodesGenerated ++;
+                        pdfPrintAttempt();
                     });
-
-                    // `png` is a Buffer
-                    // png.length           : PNG file length
-                    // png.readUInt32BE(16) : PNG image width
-                    // png.readUInt32BE(20) : PNG image height
                 }
             });
-            // console.log(path.join(base, 'barcodes', readers[i].IDENTIFIER.split(" ")[1]+".png"));
-            // base + "\\barcodes\\"+readers[i].IDENTIFIER+".png";
-            // code39.saveImage(outfile, function (err) {
-            //     // if (err) throw err;
-            //
-            //     console.log('File has been written!');
-            // });
             keys.forEach(key=>{
                 currentTemplate = currentTemplate.replace("{{"+key+"}}", readers[i][key]);
                 // стили
@@ -123,9 +114,17 @@ fs.readFile('template.html', "utf8", (err, data)=>{
         }
         result += "</div>";
 
+
         fs.writeFile("result.html", result, ()=>{
-            const html = fs.readFileSync('./result.html', 'utf8');
-            pdf.create(html, PDF_OPTIONS).toFile('./result.pdf', (err)=>{console.log(err)});
+            html = fs.readFileSync('./result.html', 'utf8');
+            htmlReady = true;
+            pdfPrintAttempt();
         });
     });
 });
+
+function pdfPrintAttempt(){
+    if (htmlReady && (barcodesToGenerate === barcodesGenerated)){
+        pdf.create(html, PDF_OPTIONS).toFile('./result.pdf', (err)=>{console.log(err)});
+    }
+}
