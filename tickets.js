@@ -23,6 +23,8 @@ const STYLECODEX = {
     "SURNAME" : {key:"SURNAMEHEIGHT", default:25, limit: 10}
 };
 
+const PHOTO_PREFFIX = "";
+
 const BREAKER = "*****";
 
 const base = path.resolve();
@@ -73,15 +75,10 @@ fs.readFile('template.html', "utf8", (err, data)=>{
             // клонирование шаблона, подстановка того что надо
             let currentTemplate = template;
             const keys = Object.keys(readers[i]);
-            // подстановка данных
-            // const code39 = barcode('code39', {
-            //     data: "TEST",
-            //     width: 206,
-            //     height: 80,
-            // });
             barcodesToGenerate ++;
             const outfile = path.join('./', 'barcodes', readers[i].IDENTIFIER+".png");
             currentTemplate = currentTemplate.replace("{{BARCODE}}", outfile);
+            // генерация штрихкода
             bwipjs.toBuffer({
                 bcid:        'code39',       // Barcode type
                 text:        'TEST',    // Text to encode
@@ -100,7 +97,9 @@ fs.readFile('template.html', "utf8", (err, data)=>{
                 }
             });
             keys.forEach(key=>{
-                currentTemplate = currentTemplate.replace("{{"+key+"}}", readers[i][key]);
+                let prefix = "";
+                if (key === "PHOTO"){prefix = PHOTO_PREFFIX;}
+                currentTemplate = currentTemplate.replace("{{"+prefix+key+"}}", readers[i][key]);
                 // стили
                 if (STYLECODEX[key]){
                     currentTemplate = currentTemplate.replace("{{"+STYLECODEX[key].key+"}}", readers[i][key].length >  STYLECODEX[key].limit ? STYLECODEX[key].default - (readers[i][key].length - STYLECODEX[key].limit) * 1.3 : STYLECODEX[key].default);
