@@ -40,6 +40,8 @@ const PDF_OPTIONS = {
     "orientation": process.argv[2] === "A3" ? "portrait" : "landscape"
 };
 
+const CLEANUP = true;
+
 let barcodesGenerated = 0;
 let barcodesToGenerate = 0;
 let htmlReady = false;
@@ -116,6 +118,7 @@ fs.readFile('template.html', "utf8", (err, data)=>{
 
 
         fs.writeFile("result.html", result, ()=>{
+            console.log("Generating html...");
             html = fs.readFileSync('./result.html', 'utf8');
             htmlReady = true;
             pdfPrintAttempt();
@@ -125,6 +128,19 @@ fs.readFile('template.html', "utf8", (err, data)=>{
 
 function pdfPrintAttempt(){
     if (htmlReady && (barcodesToGenerate === barcodesGenerated)){
-        pdf.create(html, PDF_OPTIONS).toFile('./result.pdf', (err)=>{console.log(err)});
+        console.log("Generating PDF...");
+        pdf.create(html, PDF_OPTIONS).toFile('./result.pdf', (err)=>{
+            console.log(err);
+            if (CLEANUP){
+                // cleanup
+                console.log("Success! Cleanup...");
+                fs.unlink("./result.html", ()=>{});
+                fs.readdir("./barcodes/", (err, files) => {
+                    files.forEach(file => {
+                        fs.unlink("./barcodes/"+file, ()=>{});
+                    });
+                });
+            }
+        });
     }
 }
