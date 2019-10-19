@@ -1,18 +1,22 @@
 const fs = require('fs');
 const path = require('path');
 const pdf = require('html-pdf');
+// const barcode = require('barcode');
+// const gm = require('gm').subClass({ imageMagick: true });
+const bwipjs = require('bwip-js');
+
 
 const COLUMNS = 3;
 
 const ORGNAM = "Организация";
 
 const CODEX = {
-    "111": "IDENTIFIER",
-    "333": "NAME",
-    "444": "SNAME",
-    "222": "SURNAME",
-    "555": "PHOTO",
-    "666": "DATE"
+    "#30": "IDENTIFIER",
+    "#11": "NAME",
+    "#12": "SNAME",
+    "#10": "SURNAME",
+    "#950": "PHOTO",
+    "#53": "DATE"
 };
 
 const STYLECODEX = {
@@ -21,7 +25,7 @@ const STYLECODEX = {
     "SURNAME" : {key:"SURNAMEHEIGHT", default:25, limit: 10}
 };
 
-const BREAKER = "****";
+const BREAKER = "*****";
 
 const base = path.resolve();
 
@@ -65,6 +69,43 @@ fs.readFile('template.html', "utf8", (err, data)=>{
             let currentTemplate = template;
             const keys = Object.keys(readers[i]);
             // подстановка данных
+            // const code39 = barcode('code39', {
+            //     data: "TEST",
+            //     width: 206,
+            //     height: 80,
+            // });
+            const outfile = path.join(base, 'barcodes', readers[i].IDENTIFIER+".png");
+            currentTemplate = currentTemplate.replace("{{BARCODE}}", outfile);
+            bwipjs.toBuffer({
+                bcid:        'code39',       // Barcode type
+                text:        'TEST',    // Text to encode
+                scale:       3,               // 3x scaling factor
+                height:      13,              // Bar height, in millimeters
+                includetext: false,            // Show human-readable text
+                textxalign:  'center',        // Always good to set this
+            }, function (err, png) {
+                if (err) {
+                    console.log(err)
+                    // Decide how to handle the error
+                    // `err` may be a string or Error object
+                } else {
+                    fs.writeFile(outfile, png, 'base64', function(err) {
+                        console.log(err);
+                    });
+
+                    // `png` is a Buffer
+                    // png.length           : PNG file length
+                    // png.readUInt32BE(16) : PNG image width
+                    // png.readUInt32BE(20) : PNG image height
+                }
+            });
+            // console.log(path.join(base, 'barcodes', readers[i].IDENTIFIER.split(" ")[1]+".png"));
+            // base + "\\barcodes\\"+readers[i].IDENTIFIER+".png";
+            // code39.saveImage(outfile, function (err) {
+            //     // if (err) throw err;
+            //
+            //     console.log('File has been written!');
+            // });
             keys.forEach(key=>{
                 currentTemplate = currentTemplate.replace("{{"+key+"}}", readers[i][key]);
                 // стили
@@ -81,6 +122,7 @@ fs.readFile('template.html', "utf8", (err, data)=>{
             }
         }
         result += "</div>";
+
         fs.writeFile("result.html", result, ()=>{
             const html = fs.readFileSync('./result.html', 'utf8');
             pdf.create(html, PDF_OPTIONS).toFile('./result.pdf', (err)=>{console.log(err)});
