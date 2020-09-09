@@ -81,7 +81,7 @@ fs.readFile('template.html', "utf8", (err, data)=>{
             // генерация штрихкода
             bwipjs.toBuffer({
                 bcid:        'code39',       // Barcode type
-                text:        'TEST',    // Text to encode
+                text:        readers[i].IDENTIFIER,    // Text to encode
                 scale:       3,               // 3x scaling factor
                 height:      13,              // Bar height, in millimeters
                 includetext: false,            // Show human-readable text
@@ -135,9 +135,11 @@ function pdfPrintAttempt(){
                 console.log("Success! Cleanup...");
                 fs.unlink("./result.html", ()=>{});
                 fs.readdir("./barcodes/", (err, files) => {
-                    files.forEach(file => {
-                        fs.unlink("./barcodes/"+file, ()=>{});
-                    });
+                    if (files && files.length > 0){
+                        files.forEach(file => {
+                            fs.unlink("./barcodes/"+file, ()=>{});
+                        });
+                    }
                 });
             }
         });
